@@ -4,16 +4,16 @@ import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 
 const app = express();
-const port = process.env.PORT || 3001; // Default to 3001 for API
+const port = process.env.PORT || 3001; 
 const prisma = new PrismaClient();
 
 // Middleware
-app.use(cors()); // Enable CORS for your Vercel frontend
-app.use(express.json()); // Enable JSON body parsing
+app.use(cors()); 
+app.use(express.json()); 
 
-// --- API Endpoints ---
+//  API Endpoints
 
-// Task 1: /stats (Overview Cards)
+// Task 1 /stats 
 app.get('/stats', async (req, res) => {
   try {
     const totalSpend = await prisma.invoice.aggregate({
@@ -33,7 +33,6 @@ app.get('/stats', async (req, res) => {
     res.json({
       totalSpend: totalSpend._sum.amount ?? 0,
       totalInvoices: invoiceCount,
-      // Documents Uploaded is just invoiceCount in this context
       documentsUploaded: invoiceCount, 
       averageInvoiceValue: avgInvoiceValue._avg.amount ?? 0,
     });
@@ -42,11 +41,9 @@ app.get('/stats', async (req, res) => {
   }
 });
 
-// Task 2: /invoice-trends (Line Chart)
+// Task 2 invoice-trends 
 app.get('/invoice-trends', async (req, res) => {
   try {
-    // This is a more complex query. It groups by month.
-    // Note: This specific query is for PostgreSQL.
     const trends = await prisma.$queryRaw`
       SELECT 
         TO_CHAR(date_trunc('month', "date"), 'YYYY-MM') as month,
@@ -63,7 +60,7 @@ app.get('/invoice-trends', async (req, res) => {
   }
 });
 
-// Task 3: /vendors/top10 (Horizonal Bar Chart)
+// Task 3 /vendors/top10 
 app.get('/vendors/top10', async (req, res) => {
   try {
     const topVendors = await prisma.vendor.findMany({
@@ -76,13 +73,13 @@ app.get('/vendors/top10', async (req, res) => {
       },
     });
 
-    // Calculate total spend per vendor in code
+    
     const vendorSpend = topVendors.map(vendor => ({
       name: vendor.name,
       spend: vendor.invoices.reduce((acc, inv) => acc + inv.amount, 0)
     }));
 
-    // Sort by spend and take top 10
+    
     const top10 = vendorSpend
       .sort((a, b) => b.spend - a.spend)
       .slice(0, 10);
@@ -93,10 +90,10 @@ app.get('/vendors/top10', async (req, res) => {
   }
 });
 
-// Task 4: /category-spend (Pie Chart)
+// Task 4 /category-spend
 app.get('/category-spend', async (req, res) => {
   try {
-    // Group by the 'category' (Sachkonto) field
+
     const categorySpend = await prisma.lineItem.groupBy({
       by: ['category'],
       _sum: {
@@ -104,7 +101,6 @@ app.get('/category-spend', async (req, res) => {
       },
     });
 
-    // Format for the chart
     const formattedData = categorySpend.map(item => ({
       name: item.category ?? 'Uncategorized',
       value: item._sum.totalPrice ?? 0
@@ -116,10 +112,10 @@ app.get('/category-spend', async (req, res) => {
   }
 });
 
-// Task 5: /cash-outflow (Bar Chart)
+// Task 5 /cash-outflow 
 app.get('/cash-outflow', async (req, res) => {
   try {
-    // Get payments that are due (date is not null) and group by that date
+    
     const outflow = await prisma.$queryRaw`
       SELECT 
         TO_CHAR(date_trunc('day', "date"), 'YYYY-MM-DD') as day,
@@ -136,7 +132,7 @@ app.get('/cash-outflow', async (req, res) => {
   }
 });
 
-// Task 6: /invoices (Invoices Table)
+// Task 6 /invoices 
 app.get('/invoices', async (req, res) => {
   try {
     const { search } = req.query;
@@ -158,7 +154,6 @@ app.get('/invoices', async (req, res) => {
       }
     });
 
-    // Format to match table
     const formattedInvoices = invoices.map(inv => ({
       id: inv.id,
       vendor: inv.vendor.name,
@@ -173,9 +168,6 @@ app.get('/invoices', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch invoices', details: error.message });
   }
 });
-
-// Task 7: /chat-with-data (Placeholder)
-// We will build this in Phase 3
 
 app.post('/chat-with-data', async (req, res) => {
   const { question } = req.body;
@@ -218,7 +210,6 @@ app.post('/chat-with-data', async (req, res) => {
 });
 
 
-// Start the server
 app.listen(port, () => {
   console.log(`API server listening at http://localhost:${port}`);
 });
