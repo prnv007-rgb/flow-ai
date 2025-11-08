@@ -1,20 +1,34 @@
-// apps/api/src/index.ts
-import express from 'express';
+import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 
 const app = express();
-const port = process.env.PORT || 3001; 
 const prisma = new PrismaClient();
 
 // Middleware
 app.use(cors()); 
 app.use(express.json()); 
 
-//  API Endpoints
+// Root route
+app.get('/', (req: Request, res: Response) => {
+  res.json({
+    message: 'FlowAI API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      stats: '/stats',
+      invoiceTrends: '/invoice-trends',
+      topVendors: '/vendors/top10',
+      categorySpend: '/category-spend',
+      cashOutflow: '/cash-outflow',
+      invoices: '/invoices',
+      chat: '/chat-with-data'
+    }
+  });
+});
 
 // Task 1 /stats 
-app.get('/stats', async (req, res) => {
+app.get('/stats', async (req: Request, res: Response) => {
   try {
     const totalSpend = await prisma.invoice.aggregate({
       _sum: {
@@ -36,13 +50,13 @@ app.get('/stats', async (req, res) => {
       documentsUploaded: invoiceCount, 
       averageInvoiceValue: avgInvoiceValue._avg.amount ?? 0,
     });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch stats' });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to fetch stats', details: error.message });
   }
 });
 
 // Task 2 invoice-trends 
-app.get('/invoice-trends', async (req, res) => {
+app.get('/invoice-trends', async (req: Request, res: Response) => {
   try {
     const trends = await prisma.$queryRaw`
       SELECT 
@@ -61,7 +75,7 @@ app.get('/invoice-trends', async (req, res) => {
 });
 
 // Task 3 /vendors/top10 
-app.get('/vendors/top10', async (req, res) => {
+app.get('/vendors/top10', async (req: Request, res: Response) => {
   try {
     const topVendors = await prisma.vendor.findMany({
       include: {
@@ -73,13 +87,11 @@ app.get('/vendors/top10', async (req, res) => {
       },
     });
 
-    
     const vendorSpend = topVendors.map(vendor => ({
       name: vendor.name,
       spend: vendor.invoices.reduce((acc, inv) => acc + inv.amount, 0)
     }));
 
-    
     const top10 = vendorSpend
       .sort((a, b) => b.spend - a.spend)
       .slice(0, 10);
@@ -91,9 +103,8 @@ app.get('/vendors/top10', async (req, res) => {
 });
 
 // Task 4 /category-spend
-app.get('/category-spend', async (req, res) => {
+app.get('/category-spend', async (req: Request, res: Response) => {
   try {
-
     const categorySpend = await prisma.lineItem.groupBy({
       by: ['category'],
       _sum: {
@@ -104,7 +115,7 @@ app.get('/category-spend', async (req, res) => {
     const formattedData = categorySpend.map(item => ({
       name: item.category ?? 'Uncategorized',
       value: item._sum.totalPrice ?? 0
-    })).sort((a,b) => b.value - a.value);
+    })).sort((a, b) => b.value - a.value);
 
     res.json(formattedData);
   } catch (error: any) {
@@ -113,9 +124,8 @@ app.get('/category-spend', async (req, res) => {
 });
 
 // Task 5 /cash-outflow 
-app.get('/cash-outflow', async (req, res) => {
+app.get('/cash-outflow', async (req: Request, res: Response) => {
   try {
-    
     const outflow = await prisma.$queryRaw`
       SELECT 
         TO_CHAR(date_trunc('day', "date"), 'YYYY-MM-DD') as day,
@@ -133,7 +143,7 @@ app.get('/cash-outflow', async (req, res) => {
 });
 
 // Task 6 /invoices 
-app.get('/invoices', async (req, res) => {
+app.get('/invoices', async (req: Request, res: Response) => {
   try {
     const { search } = req.query;
 
@@ -169,7 +179,8 @@ app.get('/invoices', async (req, res) => {
   }
 });
 
-app.post('/chat-with-data', async (req, res) => {
+// Task 7 /chat-with-data
+app.post('/chat-with-data', async (req: Request, res: Response) => {
   const { question } = req.body;
   
   if (!question) {
@@ -209,7 +220,18 @@ app.post('/chat-with-data', async (req, res) => {
   }
 });
 
-
-app.listen(port, () => {
-  console.log(`API server listening at http://localhost:${port}`);
+// Health check
+app.get('/health', (req: Request, res: Response) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Local development only
+if (process.env.NODE_ENV !== 'production') {
+  const port = process.env.PORT || 3001;
+  app.listen(port, () => {
+    console.log(`🚀 API server listening at http://localhost:${port}`);
+  });
+}
+
+// Export for Vercel serverless
+export default app;

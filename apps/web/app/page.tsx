@@ -7,6 +7,7 @@ import {
   BarChart, Bar,
   ResponsiveContainer,
 } from "recharts";
+import { api } from "../lib/api";
 
 // Types for API responses
 type Stats = {
@@ -72,42 +73,51 @@ export default function DashboardPage() {
   const [chatResponse, setChatResponse] = useState<ChatResponse | null>(null);
   const [isChatLoading, setIsChatLoading] = useState(false);
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "";
+  // Loading and error states
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchDashboard() {
       try {
-        const [statsRes, trendsRes, vendorsRes, categoriesRes, cashRes, invoicesRes] = await Promise.all([
-          fetch(`${API_BASE}/stats`),
-          fetch(`${API_BASE}/invoice-trends`),
-          fetch(`${API_BASE}/vendors/top10`),
-          fetch(`${API_BASE}/category-spend`),
-          fetch(`${API_BASE}/cash-outflow`),
-          fetch(`${API_BASE}/invoices`),
+        setIsLoading(true);
+        setError(null);
+
+        const [statsData, trendsData, vendorsData, categoriesData, cashData, invoicesData] = await Promise.all([
+          api.getStats(),
+          api.getInvoiceTrends(),
+          api.getTopVendors(),
+          api.getCategorySpend(),
+          api.getCashOutflow(),
+          api.getInvoices(),
         ]);
-        setStats(await statsRes.json());
-        setInvoiceTrends(await trendsRes.json());
-        setTopVendors(await vendorsRes.json());
-        setCategorySpend(await categoriesRes.json());
-        setCashOutflow(await cashRes.json());
-        setInvoices(await invoicesRes.json());
+
+        setStats(statsData);
+        setInvoiceTrends(trendsData);
+        setTopVendors(vendorsData);
+        setCategorySpend(categoriesData);
+        setCashOutflow(cashData);
+        setInvoices(invoicesData);
       } catch (err) {
         console.error("Error loading dashboard data:", err);
+        setError(err instanceof Error ? err.message : "Failed to load dashboard data");
+      } finally {
+        setIsLoading(false);
       }
     }
 
     fetchDashboard();
-  }, [API_BASE]);
+  }, []);
 
   // Invoice search handler
   async function handleInvoiceSearch(e: React.FormEvent) {
     e.preventDefault();
     try {
-      const searchRes = await fetch(`${API_BASE}/invoices?search=${encodeURIComponent(invoiceSearch)}`);
-      const data = await searchRes.json();
+      const data = await api.getInvoices(invoiceSearch);
       setInvoices(data);
     } catch (err) {
       console.error("Invoice search failed:", err);
+      setError("Failed to search invoices");
     }
   }
 
@@ -120,19 +130,32 @@ export default function DashboardPage() {
     setChatResponse(null);
 
     try {
-      const res = await fetch(`${API_BASE}/chat-with-data`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: chatQuestion }),
-      });
-      const data = await res.json();
+      const data = await api.chatWithData(chatQuestion);
       setChatResponse(data);
     } catch (err) {
       console.error("Chat query failed:", err);
-      setChatResponse(null);
+      setError(err instanceof Error ? err.message : "Chat query failed");
     } finally {
       setIsChatLoading(false);
     }
+  }
+
+  if (isLoading) {
+    return (
+      <main style={{ maxWidth: 900, margin: "auto", padding: 20, textAlign: "center" }}>
+        <h1>Loading Dashboard...</h1>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main style={{ maxWidth: 900, margin: "auto", padding: 20 }}>
+        <h1>Error Loading Dashboard</h1>
+        <p style={{ color: "red" }}>{error}</p>
+        <button onClick={() => window.location.reload()}>Retry</button>
+      </main>
+    );
   }
 
   return (
@@ -141,22 +164,30 @@ export default function DashboardPage() {
 
       {/* Overview Cards */}
       {stats && (
-        <section style={{ display: "flex", gap: 20, marginBottom: 30 }}>
+        <section style={{ display: "flex", gap: 20, marginBottom: 30, flexWrap: "wrap" }}>
           <div style={cardStyle}>
             <h3>Total Spend (YTD)</h3>
-            <p>${stats.totalSpend.toLocaleString()}</p>
+            <p style={{ fontSize: 24, fontWeight: "bold", margin: 0 }}>
+              ${stats.totalSpend.toLocaleString()}
+            </p>
           </div>
           <div style={cardStyle}>
             <h3>Total Invoices Processed</h3>
-            <p>{stats.totalInvoices}</p>
+            <p style={{ fontSize: 24, fontWeight: "bold", margin: 0 }}>
+              {stats.totalInvoices}
+            </p>
           </div>
           <div style={cardStyle}>
             <h3>Documents Uploaded</h3>
-            <p>{stats.documentsUploaded}</p>
+            <p style={{ fontSize: 24, fontWeight: "bold", margin: 0 }}>
+              {stats.documentsUploaded}
+            </p>
           </div>
           <div style={cardStyle}>
             <h3>Average Invoice Value</h3>
-            <p>${stats.averageInvoiceValue.toFixed(2)}</p>
+            <p style={{ fontSize: 24, fontWeight: "bold", margin: 0 }}>
+              ${stats.averageInvoiceValue.toFixed(2)}
+            </p>
           </div>
         </section>
       )}
@@ -181,10 +212,10 @@ export default function DashboardPage() {
       {/* Top Vendors List */}
       <section style={{ marginBottom: 30 }}>
         <h2>Spend by Vendor (Top 10)</h2>
-        <ul>
+        <ul style={{ listStyle: "none", padding: 0 }}>
           {topVendors.map(({ name, spend }) => (
-            <li key={name}>
-              {name}: ${spend.toLocaleString()}
+            <li key={name} style={{ padding: "8px 0", borderBottom: "1px solid #eee" }}>
+              <strong>{name}</strong>: ${spend.toLocaleString()}
             </li>
           ))}
         </ul>
@@ -240,35 +271,46 @@ export default function DashboardPage() {
             placeholder="Search by vendor or invoice number"
             value={invoiceSearch}
             onChange={(e) => setInvoiceSearch(e.target.value)}
-            style={{ padding: 6, width: "300px" }}
+            style={{ padding: 6, width: "300px", border: "1px solid #ccc", borderRadius: 4 }}
           />
-          <button type="submit" style={{ marginLeft: 8, padding: "6px 12px" }}>
+          <button type="submit" style={{ marginLeft: 8, padding: "6px 12px", cursor: "pointer" }}>
             Search
           </button>
         </form>
 
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr>
-              <th style={tableHeaderStyle}>Vendor</th>
-              <th style={tableHeaderStyle}>Date</th>
-              <th style={tableHeaderStyle}>Invoice #</th>
-              <th style={tableHeaderStyle}>Amount</th>
-              <th style={tableHeaderStyle}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {invoices.map((inv) => (
-              <tr key={inv.id} style={{ borderBottom: "1px solid #ddd" }}>
-                <td style={tableCellStyle}>{inv.vendor}</td>
-                <td style={tableCellStyle}>{new Date(inv.date).toLocaleDateString()}</td>
-                <td style={tableCellStyle}>{inv.invoiceNumber}</td>
-                <td style={tableCellStyle}>${inv.amount.toFixed(2)}</td>
-                <td style={tableCellStyle}>{inv.status}</td>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                <th style={tableHeaderStyle}>Vendor</th>
+                <th style={tableHeaderStyle}>Date</th>
+                <th style={tableHeaderStyle}>Invoice #</th>
+                <th style={tableHeaderStyle}>Amount</th>
+                <th style={tableHeaderStyle}>Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {invoices.map((inv) => (
+                <tr key={inv.id} style={{ borderBottom: "1px solid #ddd" }}>
+                  <td style={tableCellStyle}>{inv.vendor}</td>
+                  <td style={tableCellStyle}>{new Date(inv.date).toLocaleDateString()}</td>
+                  <td style={tableCellStyle}>{inv.invoiceNumber}</td>
+                  <td style={tableCellStyle}>${inv.amount.toFixed(2)}</td>
+                  <td style={tableCellStyle}>
+                    <span style={{
+                      padding: "4px 8px",
+                      borderRadius: 4,
+                      background: inv.status === "paid" ? "#d4edda" : "#fff3cd",
+                      color: inv.status === "paid" ? "#155724" : "#856404"
+                    }}>
+                      {inv.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       {/* Chat with Data */}
@@ -280,37 +322,45 @@ export default function DashboardPage() {
             placeholder="Ask a question about the data..."
             value={chatQuestion}
             onChange={(e) => setChatQuestion(e.target.value)}
-            style={{ padding: 6, width: "400px" }}
+            style={{ padding: 6, width: "400px", border: "1px solid #ccc", borderRadius: 4 }}
           />
-          <button type="submit" style={{ marginLeft: 8, padding: "6px 12px" }} disabled={isChatLoading}>
+          <button 
+            type="submit" 
+            style={{ marginLeft: 8, padding: "6px 12px", cursor: "pointer" }} 
+            disabled={isChatLoading}
+          >
             {isChatLoading ? "Loading..." : "Ask"}
           </button>
         </form>
 
         {chatResponse && (
-          <div style={{ whiteSpace: "pre-wrap", background: "#f9f9f9", padding: 10, borderRadius: 4 }}>
+          <div style={{ background: "#f9f9f9", padding: 20, borderRadius: 4, border: "1px solid #ddd" }}>
             <h3>Generated SQL:</h3>
-            <code>{chatResponse.sql}</code>
+            <pre style={{ background: "#fff", padding: 10, borderRadius: 4, overflowX: "auto" }}>
+              <code>{chatResponse.sql}</code>
+            </pre>
 
-            <h3>Results:</h3>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  {chatResponse.columns.map((col) => (
-                    <th key={col} style={tableHeaderStyle}>{col}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {chatResponse.data.map((row, i) => (
-                  <tr key={i} style={{ borderBottom: "1px solid #ddd" }}>
+            <h3>Results ({chatResponse.row_count} rows):</h3>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
                     {chatResponse.columns.map((col) => (
-                      <td key={col} style={tableCellStyle}>{String(row[col])}</td>
+                      <th key={col} style={tableHeaderStyle}>{col}</th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {chatResponse.data.map((row, i) => (
+                    <tr key={i} style={{ borderBottom: "1px solid #ddd" }}>
+                      {chatResponse.columns.map((col) => (
+                        <td key={col} style={tableCellStyle}>{String(row[col])}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </section>
@@ -320,10 +370,12 @@ export default function DashboardPage() {
 
 const cardStyle: React.CSSProperties = {
   flex: 1,
+  minWidth: 200,
   padding: 20,
-  background: "#eee",
-  borderRadius: 6,
+  background: "#f5f5f5",
+  borderRadius: 8,
   textAlign: "center",
+  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
 };
 
 const tableHeaderStyle: React.CSSProperties = {
@@ -331,6 +383,7 @@ const tableHeaderStyle: React.CSSProperties = {
   padding: 8,
   textAlign: "left",
   background: "#f0f0f0",
+  fontWeight: "bold",
 };
 
 const tableCellStyle: React.CSSProperties = {
