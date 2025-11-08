@@ -1,0 +1,52 @@
+// apps/api/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Vendor {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  invoices Invoice[]
+}
+
+model Invoice {
+  id            String    @id // We will use the _id from the JSON
+  invoiceNumber String    
+  date          DateTime
+  amount        Float
+  status        String
+  customerName  String?   // Added this, removed Customer table
+  
+  vendorId      String
+  vendor        Vendor    @relation(fields: [vendorId], references: [id])
+  
+  lineItems     LineItem[]
+  payment       Payment?  // One-to-one relationship
+}
+
+model LineItem {
+  id          String   @id @default(cuid())
+  description String
+  quantity    Float    // Changed to Float
+  unitPrice   Float
+  totalPrice  Float
+  category    String?  // This will be our 'Sachkonto'
+  
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id        String    @id @default(cuid())
+  date      DateTime? // This will be the dueDate, which can be null
+  amount    Float
+  
+  invoiceId String    @unique // Each invoice has one payment due
+  invoice   Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
