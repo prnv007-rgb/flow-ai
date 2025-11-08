@@ -1,24 +1,25 @@
 {
   "name": "api",
   "version": "1.0.0",
-  "main": "dist/index.js",
+  "type": "module",
+  "private": true,
   "scripts": {
-    "dev": "ts-node src/index.ts",
+    "dev": "bun --watch src/index.ts",
     "build": "prisma generate && tsc && cp -r prisma dist/",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "seed": "bun --bun ./prisma/seed.ts",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "express": "^5.1.0",
     "cors": "^2.8.5",
-    "dotenv": "^16.6.1",
-    "@prisma/client": "^6.19.0"
+    "@prisma/client": "^6.19.0",
+    "dotenv": "^16.4.5"
   },
   "devDependencies": {
-    "@types/node": "^24.10.0",
     "@types/express": "^5.0.5",
-    "@types/cors": "^2.8.19",
+    "@types/node": "^24.10.0",
     "typescript": "^5.9.3",
-    "ts-node": "^10.9.2",
     "prisma": "^6.19.0"
   }
 }
