@@ -1,9 +1,15 @@
 {
   "$schema": "https://vercel.com/schema.json",
+  "buildCommand": "bun run build",
+  "installCommand": "bun install",
+  "outputDirectory": "apps/web/.next",
+  "framework": null,
   "functions": {
     "apps/api/dist/index.js": {
       "memory": 1024,
-      "maxDuration": 10
+      "maxDuration": 10,
+      "runtime": "nodejs20.x",
+      "includeFiles": "apps/api/dist/**"
     }
   },
   "rewrites": [
