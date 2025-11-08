@@ -1,9 +1,10 @@
 {
   "$schema": "https://vercel.com/schema.json",
-  "buildCommand": "bun run build",
+  "buildCommand": "turbo run build --filter=./apps/web --filter=./apps/api",
   "installCommand": "bun install",
   "outputDirectory": "apps/web/.next",
   "framework": null,
+  "ignoreCommand": "exit 0",
   "functions": {
     "apps/api/dist/index.js": {
       "memory": 1024,
