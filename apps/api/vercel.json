@@ -1,6 +1,8 @@
 {
   "$schema": "https://vercel.com/schema.json",
   "version": 2,
+  "buildCommand": "bun install && bun run build",
+  "outputDirectory": "dist",
   "builds": [
     {
       "src": "dist/index.js",
