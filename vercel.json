@@ -1,32 +1,11 @@
 {
-  "$schema": "https://vercel.com/schema.json",
-  "buildCommand": "bun install && bun run build",
-  "installCommand": "bun install",
-  "outputDirectory": "apps/web/.next",
+  "version": 2,
   "builds": [
-    {
-      "src": "apps/web/next.config.js",
-      "use": "@vercel/next"
-    },
-    {
-      "src": "apps/api/dist/index.js",
-      "use": "@vercel/node"
-    }
+    { "src": "apps/web/package.json", "use": "@vercel/next" },
+    { "src": "apps/api/src/index.ts", "use": "@vercel/node" }
   ],
-  "functions": {
-    "api/*.js": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
-  },
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/apps/api/dist/index.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/apps/web/$1"
-    }
+    { "src": "/api/(.*)", "dest": "apps/api/src/index.ts" },
+    { "src": "/(.*)", "dest": "apps/web/$1" }
   ]
 }
