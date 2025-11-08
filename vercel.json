@@ -1,16 +1,14 @@
 {
   "$schema": "https://vercel.com/schema.json",
-  "buildCommand": "turbo run build --filter=./apps/web --filter=./apps/api",
+  "buildCommand": "bun run build",
   "installCommand": "bun install",
   "outputDirectory": "apps/web/.next",
   "framework": null,
-  "ignoreCommand": "exit 0",
   "functions": {
     "apps/api/dist/index.js": {
       "memory": 1024,
       "maxDuration": 10,
-      "runtime": "nodejs20.x",
-      "includeFiles": "apps/api/dist/**"
+      "runtime": "nodejs20.x"
     }
   },
   "rewrites": [
