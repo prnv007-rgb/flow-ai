@@ -4,23 +4,20 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun run src/index.ts",
+    "dev": "bun --watch src/index.ts",
     "build": "tsc && cp -r prisma dist/",
     "start": "node dist/index.js",
-    "seed": "bun run prisma/seed.ts"
+    "seed": "bun --bun ./prisma/seed.ts"
   },
   "dependencies": {
     "express": "^5.1.0",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "pg": "^8.11.3",
-    "prisma": "^6.19.0",
-    "@prisma/client": "^6.19.0"
+    "@prisma/client": "^6.19.0",
+    "dotenv": "^16.4.5"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
     "@types/express": "^5.0.5",
-    "@types/cors": "^2.8.19",
-    "@types/node": "^24.10.0"
+    "@types/node": "^24.10.0",
+    "typescript": "^5.9.3"
   }
 }
