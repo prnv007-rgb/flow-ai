@@ -1,5 +1,5 @@
 {
-  "name": "my-turborepo",
+  "name": "flowbit",
   "private": true,
   "scripts": {
     "build": "turbo run build",
