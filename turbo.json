@@ -2,7 +2,7 @@
   "$schema": "https://turborepo.com/schema.json",
   "globalEnv": [
     "DATABASE_URL",
-    "VANNA_API_BASE_URL"
+    "VANNA_BASE_URL"
   ],
   "ui": "tui",
   "tasks": {
