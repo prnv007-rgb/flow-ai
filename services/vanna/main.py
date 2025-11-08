@@ -2,7 +2,7 @@ import os
 import re
 import uvicorn
 import pandas as pd
-import psycopg2
+import psycopg
 from urllib.parse import urlparse
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,9 +12,7 @@ from dotenv import load_dotenv
 from groq import Groq
 from sqlalchemy import create_engine, text
 
-# -------------------------------
-# Load .env
-# -------------------------------
+
 load_dotenv()
 
 def _strip_quotes(s: str) -> str:
@@ -33,13 +31,10 @@ if not GROQ_API_KEY:
 if not DB_URL:
     raise ValueError("Missing DATABASE_URL in .env")
 
-# -------------------------------
-# Groq LLaMA client
-# -------------------------------
+
 groq_client = Groq(api_key=GROQ_API_KEY)
 
-# -------------------------------
-# Utility: Clean SQL
+
 # -------------------------------
 def clean_sql_output(raw_text: str) -> str:
     if not raw_text:
@@ -66,7 +61,14 @@ def clean_sql_output(raw_text: str) -> str:
         cleaned = cleaned[: cleaned.rfind(";") + 1]
     return cleaned.strip()
 
-system_instructions = """
+
+# -------------------------------
+def generate_sql_from_question(question: str, system_instructions: str = None) -> Tuple[str, str]:
+    if not question:
+        raise HTTPException(status_code=400, detail="Question is required")
+
+    
+    system_instructions = """
 You are an expert SQL generator for PostgreSQL with the following schema:
 
 Tables:
@@ -109,36 +111,6 @@ ORDER BY
 LIMIT 5;
 """
 
-# -------------------------------
-# SQL Generation (Groq LLaMA)
-# -------------------------------
-def generate_sql_from_question(question: str, system_instructions: str = None) -> Tuple[str, str]:
-    if not question:
-        raise HTTPException(status_code=400, detail="Question is required")
-
-    # Use your new schema-aware prompt if no override provided
-    system_instructions = system_instructions or """
-    You are an expert SQL generator for PostgreSQL using the following schema:
-
-    Tables:
-
-    Vendor (id: String, name: String)
-
-    Invoice (id: String, invoiceNumber: String, date: DateTime, amount: Float, status: String, customerName: String (nullable), vendorId: String)
-
-    LineItem (id: String, description: String, quantity: Float, unitPrice: Float, totalPrice: Float, category: String (nullable), invoiceId: String)
-
-    Payment (id: String, date: DateTime (nullable), amount: Float, invoiceId: String)
-
-    Relations:
-
-    - Invoice.vendorId references Vendor.id
-    - LineItem.invoiceId references Invoice.id
-    - Payment.invoiceId references Invoice.id (one-to-one)
-
-    Use table aliases and JOINs when necessary. Use exact table and column names as in schema. Return only valid SQL without explanations.
-    """
-
     try:
         resp = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
@@ -155,9 +127,7 @@ def generate_sql_from_question(question: str, system_instructions: str = None) -
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Groq LLM error: {e}")
 
-# -------------------------------
-# Postgres Connection
-# -------------------------------
+
 def _connect_psycopg_from_url(db_url: str):
     parsed = urlparse(db_url)
     if parsed.scheme not in ("postgresql", "postgres"):
@@ -166,7 +136,7 @@ def _connect_psycopg_from_url(db_url: str):
     if "?" in dbname:
         dbname = dbname.split("?")[0]
 
-    conn = psycopg2.connect(
+    conn = psycopg.connect(
         host=parsed.hostname,
         dbname=dbname,
         user=parsed.username,
@@ -192,13 +162,10 @@ def run_sql_query(sql: str) -> pd.DataFrame:
         raise HTTPException(status_code=500, detail=f"SQL execution error: {str(e)}")
 
 
-# -------------------------------
-# FastAPI App
-# -------------------------------
+
 app = FastAPI(title="Vanna (Groq LLaMA) SQL AI", version="1.1")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-# Models
 class QuestionRequest(BaseModel):
     question: str
 
@@ -223,9 +190,7 @@ class ChatResponse(BaseModel):
     columns: List[str]
     row_count: int
 
-# -------------------------------
-# Routes
-# -------------------------------
+
 @app.get("/")
 def root():
     return {
@@ -250,8 +215,8 @@ def api_run_sql(req: RunSQLRequest):
         columns=list(df.columns),
         row_count=len(df),
     )
-    
-    
+
+
 @app.post("/api/v1/chat-with-data", response_model=ChatResponse)
 def api_chat_with_data(req: QuestionRequest):
     try:
@@ -259,7 +224,6 @@ def api_chat_with_data(req: QuestionRequest):
         if not cleaned_sql:
             raise HTTPException(status_code=422, detail=f"Model did not return valid SQL. Raw output: {raw}")
 
-        # No fix_table_names call needed if prompt is correct
         df = run_sql_query(cleaned_sql)
 
         return ChatResponse(
@@ -274,9 +238,8 @@ def api_chat_with_data(req: QuestionRequest):
         print(f"Error in chat-with-data: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# -------------------------------
-# Entry
-# -------------------------------
+
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000) or 8000)
     print(f"🚀 Starting Vanna AI server at http://0.0.0.0:{port}")
