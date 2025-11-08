@@ -3,16 +3,24 @@
   "buildCommand": "bun install && bun run build",
   "installCommand": "bun install",
   "outputDirectory": "apps/web/.next",
-  "functions": {
-    "api/*.js": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
-  },
-  "rewrites": [
+  "builds": [
     {
-      "source": "/api/(.*)",
-      "destination": "/apps/api/dist/index.js"
+      "src": "apps/api/dist/index.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "apps/web/next.config.js",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/apps/api/dist/index.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/apps/web/$1"
     }
   ]
 }
