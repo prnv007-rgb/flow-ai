@@ -1,19 +1,6 @@
 {
   "$schema": "https://vercel.com/schema.json",
-  "version": 2,
   "buildCommand": "cd ../.. && bun install && bunx turbo run build --filter=api",
   "outputDirectory": "dist",
-  "installCommand": "cd ../.. && bun install",
-  "builds": [
-    {
-      "src": "dist/index.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "dist/index.js"
-    }
-  ]
+  "installCommand": "cd ../.. && bun install"
 }
