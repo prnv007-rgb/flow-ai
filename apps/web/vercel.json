@@ -1,5 +1,5 @@
 {
   "$schema": "https://vercel.com/schema.json",
-  "buildCommand": "cd ../.. && bun install && bunx turbo run build --filter=web",
-  "installCommand": "cd ../.. && bun install"
+  "buildCommand": "cd ../.. && bun install --filter=web && bunx turbo run build --filter=web",
+  "installCommand": "cd ../.. && bun install --filter=web"
 }
