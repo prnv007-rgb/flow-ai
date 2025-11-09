@@ -351,7 +351,7 @@ export default function DashboardPage() {
             type="text"
             placeholder="Ask a question about the data..."
             value={chatQuestion}
-            onChange={(e) => setChatQuestion(e.T.value)}
+            onChange={(e) => setChatQuestion(e.target.value)}
             style={{ padding: 6, width: "400px", border: "1px solid #ccc", borderRadius: 4 }}
           />
           <button 
