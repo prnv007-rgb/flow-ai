@@ -7,7 +7,6 @@ A full-stack AI-powered invoice management and analytics platform built with **T
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)](https://www.docker.com/)
 
 ## 🚀 Live Demo
-
 - **FULL-STACK**: [FlowBit-AI](https://flow-ai-web-front.vercel.app/)
 
 ## 📋 Table of Contents
@@ -594,6 +593,7 @@ Contributions are welcome! Please follow these steps:
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+- **DEMO VIDEO FOR LOCAL DEPLOYMENT AFTER CLONING**:https://drive.google.com/file/d/1hZR-PYeELMkDnSYQYSC6VXsaESjAXCR2/view?usp=sharing 
 
 ### Development Guidelines
 
