@@ -1,17 +1,61 @@
-# docker-compose.yml
-version: '3.8'
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:15
     restart: always
     environment:
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
-      POSTGRES_DB: flowbitdb
-    ports:
-      - '5440:5432'
+      POSTGRES_DB: flowbit_db
+      POSTGRES_USER: flowbit_user
+      POSTGRES_PASSWORD: flowbit_password
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5445:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flowbit_user -d flowbit_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  vanna:
+    build:
+      context: .
+      dockerfile: services/vanna/Dockerfile
+    restart: always
+    environment:
+      DATABASE_URL: "postgresql+psycopg://flowbit_user:flowbit_password@db:5432/flowbit_db"
+      GROQ_API_KEY: "${GROQ_API_KEY}"
+      PORT: 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: always
+    environment:
+      DATABASE_URL: "postgresql://flowbit_user:flowbit_password@db:5432/flowbit_db"
+      VANNA_API_BASE_URL: "http://vanna:8000"
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      vanna:
+        condition: service_started
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: always
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: "http://localhost:3001/api"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
 
 volumes:
-  postgres_data:
+  pgdata:

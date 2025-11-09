@@ -9,6 +9,6 @@ const nextConfig = {
   turbopack: {
     root: resolve(__dirname, '../../'), // Adjust relative to your apps/web folder
   },
+  output: 'standalone', // <-- MOVED IT HERE, to the top level
 }
-
 export default nextConfig

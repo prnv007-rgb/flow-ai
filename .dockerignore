@@ -1,0 +1,16 @@
+# Git
+.git
+.gitignore
+
+# Node
+node_modules
+.npm
+
+# Turbo
+.turbo
+build
+dist
+.next
+
+# OS
+.DS_Store
