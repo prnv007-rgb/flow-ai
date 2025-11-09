@@ -7,9 +7,7 @@ A full-stack AI-powered invoice management and analytics platform built with **T
 
 ## 🚀 Live Demo
 
-- **Frontend**: [https://your-frontend.vercel.app](https://your-frontend.vercel.app)
-- **Backend API**: [https://flow-ai-backend-theta.vercel.app](https://flow-ai-backend-theta.vercel.app)
-- **Vanna AI Service**: [https://flow-ai-0mfx.onrender.com](https://flow-ai-0mfx.onrender.com)
+- **FULL-STACK**: [FlowBit-AI](https://flow-ai-web-front.vercel.app/)
 
 ## 📋 Table of Contents
 
