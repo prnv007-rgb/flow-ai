@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { api } from "../lib/api";
+import { CSVLink } from "react-csv"; // <-- This was already correct
 
 // Types for API responses
 type Stats = {
@@ -158,6 +159,15 @@ export default function DashboardPage() {
     );
   }
 
+  // <-- 1. CSV HEADERS DEFINED HERE (Correct Location) -->
+  const csvHeaders = [
+    { label: "Vendor", key: "vendor" },
+    { label: "Date", key: "date" },
+    { label: "Invoice #", key: "invoiceNumber" },
+    { label: "Amount", key: "amount" },
+    { label: "Status", key: "status" },
+  ];
+
   return (
     <main style={{ maxWidth: 900, margin: "auto", padding: 20, fontFamily: "Arial, sans-serif" }}>
       <h1>Flowbit Analytics Dashboard</h1>
@@ -265,18 +275,38 @@ export default function DashboardPage() {
       <section style={{ marginBottom: 30 }}>
         <h2>Invoices</h2>
 
-        <form onSubmit={handleInvoiceSearch} style={{ marginBottom: 10 }}>
-          <input
-            type="text"
-            placeholder="Search by vendor or invoice number"
-            value={invoiceSearch}
-            onChange={(e) => setInvoiceSearch(e.target.value)}
-            style={{ padding: 6, width: "300px", border: "1px solid #ccc", borderRadius: 4 }}
-          />
-          <button type="submit" style={{ marginLeft: 8, padding: "6px 12px", cursor: "pointer" }}>
-            Search
-          </button>
-        </form>
+        {/* <-- 2. ADDED FLEX WRAPPER & EXPORT BUTTON --> */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+          <form onSubmit={handleInvoiceSearch}>
+            <input
+              type="text"
+              placeholder="Search by vendor or invoice number"
+              value={invoiceSearch}
+              onChange={(e) => setInvoiceSearch(e.target.value)}
+              style={{ padding: 6, width: "300px", border: "1px solid #ccc", borderRadius: 4 }}
+            />
+            <button type="submit" style={{ marginLeft: 8, padding: "6px 12px", cursor: "pointer" }}>
+              Search
+            </button>
+          </form>
+
+          <CSVLink
+            data={invoices}
+            headers={csvHeaders}
+            filename={"invoice-export.csv"}
+            style={{
+              padding: "6px 12px",
+              cursor: "pointer",
+              textDecoration: "none",
+              color: "#000",
+              background: "#f0f0f0",
+              border: "1px solid #ccc",
+              borderRadius: 4
+            }}
+          >
+            Export to CSV
+          </CSVLink>
+        </div>
 
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -321,7 +351,7 @@ export default function DashboardPage() {
             type="text"
             placeholder="Ask a question about the data..."
             value={chatQuestion}
-            onChange={(e) => setChatQuestion(e.target.value)}
+            onChange={(e) => setChatQuestion(e.T.value)}
             style={{ padding: 6, width: "400px", border: "1px solid #ccc", borderRadius: 4 }}
           />
           <button 
@@ -372,7 +402,7 @@ const cardStyle: React.CSSProperties = {
   flex: 1,
   minWidth: 200,
   padding: 20,
-  background: "#f5f5f5",
+  background: "#f5f5ff5",
   borderRadius: 8,
   textAlign: "center",
   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
