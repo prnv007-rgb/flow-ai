@@ -1,0 +1,18 @@
+{
+  "$schema": "https://vercel.com/schema.json",
+  "version": 2,
+  "buildCommand": "cd ../.. && bun install && bun run build --filter=api",
+  "outputDirectory": "dist",
+  "builds": [
+    {
+      "src": "dist/index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "dist/index.js"
+    }
+  ]
+}
