@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://flow-ai-api-1d3e.vercel.app/';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://flow-ai-backend-theta.vercel.app';
 
 export async function fetchAPI<T = any>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_URL}${endpoint}`;
