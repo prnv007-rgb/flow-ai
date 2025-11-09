@@ -84,6 +84,12 @@ Relations:
 - LineItem.invoiceId references Invoice.id
 - Payment.invoiceId references Invoice.id (one-to-one)
 
+Important Database-Specific Notes:
+
+- Invoice status values in this database are: 'processed' (NOT 'PAID', 'PENDING', etc.)
+- DO NOT add WHERE clauses for status unless the user specifically mentions status in their question
+- When asked about "total spending", "all invoices", or general queries, include ALL records regardless of status
+
 Rules:
 
 - Always use **double quotes** around all table names and column names exactly as shown, preserving camelCase (e.g. "vendorId", "invoiceNumber").
@@ -92,8 +98,17 @@ Rules:
 - Format the SQL with proper spacing and line breaks for readability.
 - Return only the SQL query, no explanation or extra text.
 
-Example:
+Examples:
 
+For "Show me total spending":
+```sql
+SELECT
+    SUM(L."totalPrice") AS total_spending
+FROM
+    "LineItem" L;
+```
+
+For "Show me top 5 vendors by spend":
 ```sql
 SELECT
     V."name",
@@ -109,6 +124,7 @@ GROUP BY
 ORDER BY
     total_spend DESC
 LIMIT 5;
+```
 """
 
     try:
